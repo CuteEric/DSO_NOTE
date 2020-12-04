@@ -193,7 +193,6 @@ FullSystem::~FullSystem()
 		calibLog->close(); delete calibLog;
 		numsLog->close(); delete numsLog;
 		coarseTrackingLog->close(); delete coarseTrackingLog;
-		//errorsLog->close(); delete errorsLog;
 		eigenAllLog->close(); delete eigenAllLog;
 		eigenPLog->close(); delete eigenPLog;
 		eigenALog->close(); delete eigenALog;
@@ -215,11 +214,6 @@ FullSystem::~FullSystem()
 	delete coarseInitializer;
 	delete pixelSelector;
 	delete ef;
-}
-
-void FullSystem::setOriginalCalib(const VecXf &originalCalib, int originalW, int originalH)
-{
-
 }
 
 //* 设置相机响应函数
@@ -718,16 +712,6 @@ void FullSystem::activatePointsMT()
 
 }
 
-
-
-
-
-
-void FullSystem::activatePointsOldFirst()
-{
-	assert(false);
-}
-
 //@ 标记要移除点的状态, 边缘化or丢掉
 void FullSystem::flagPointsForRemoval()
 {
@@ -948,7 +932,6 @@ void FullSystem::addActiveFrame( ImageAndExposure* image, int id )
 //@ 把跟踪的帧, 给到建图线程, 设置成关键帧或非关键帧
 void FullSystem::deliverTrackedFrame(FrameHessian* fh, bool needKF)
 {
-
 	//! 顺序执行
 	if(linearizeOperation) 
 	{
@@ -1068,7 +1051,6 @@ void FullSystem::blockUntilMappingIsFinished()
 	lock.unlock();
 
 	mappingThread.join();
-
 }
 
 //@ 设置成非关键帧
@@ -1271,9 +1253,6 @@ void FullSystem::initializeFromInitializer(FrameHessian* newFrame)
 	ef->insertFrame(firstFrame, &Hcalib);
 	setPrecalcValues();   		// 设置相对位姿预计算值
 
-	//int numPointsTotal = makePixelStatus(firstFrame->dI, selectionMap, wG[0], hG[0], setting_desiredDensity);
-	//int numPointsTotal = pixelSelector->makeMaps(firstFrame->dIp, selectionMap,setting_desiredDensity);
-
 	firstFrame->pointHessians.reserve(wG[0]*hG[0]*0.2f); // 20%的点数目
 	firstFrame->pointHessiansMarginalized.reserve(wG[0]*hG[0]*0.2f); // 被边缘化
 	firstFrame->pointHessiansOut.reserve(wG[0]*hG[0]*0.2f); // 丢掉的点
@@ -1312,7 +1291,7 @@ void FullSystem::initializeFromInitializer(FrameHessian* newFrame)
 		delete pt;
 		if(!std::isfinite(ph->energyTH)) {delete ph; continue;}
 
-		ph->setIdepthScaled(point->iR*rescaleFactor);  //? 为啥设置的是scaled之后的
+		ph->setIdepthScaled(point->iR*rescaleFactor);  //既然尺度因子rescaleFactor已经得到,必须都按该尺度归一化
 		ph->setIdepthZero(ph->idepth);			//! 设置初始先验值, 还有神奇的求零空间方法
 		ph->hasDepthPrior=true;
 		ph->setPointStatus(PointHessian::ACTIVE);	// 激活点
@@ -1351,12 +1330,10 @@ void FullSystem::initializeFromInitializer(FrameHessian* newFrame)
 //@ 提取新的像素点用来跟踪
 void FullSystem::makeNewTraces(FrameHessian* newFrame, float* gtDepth)
 {
-	pixelSelector->allowFast = true;  //bug 没卵用
 	//int numPointsTotal = makePixelStatus(newFrame->dI, selectionMap, wG[0], hG[0], setting_desiredDensity);
 	int numPointsTotal = pixelSelector->makeMaps(newFrame, selectionMap,setting_desiredImmatureDensity);
 
 	newFrame->pointHessians.reserve(numPointsTotal*1.2f);
-	//fh->pointHessiansInactive.reserve(numPointsTotal*1.2f);
 	newFrame->pointHessiansMarginalized.reserve(numPointsTotal*1.2f);
 	newFrame->pointHessiansOut.reserve(numPointsTotal*1.2f);
 
@@ -1553,15 +1530,5 @@ void FullSystem::printFrameLifetimes()
 	delete lg;
 
 }
-
-
-void FullSystem::printEvalLine()
-{
-	return;
-}
-
-
-
-
 
 }

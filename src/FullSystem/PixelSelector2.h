@@ -47,7 +47,6 @@ public:
 	int currentPotential; 		//!< 当前选择像素点的潜力, 就是网格大小, 越大选点越少
 
 
-	bool allowFast;
 	void makeHists(const FrameHessian* const fh);
 private:
 

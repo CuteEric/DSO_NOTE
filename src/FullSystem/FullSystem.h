@@ -164,7 +164,6 @@ public:
 
 
 	void setGammaFunction(float* BInv);
-	void setOriginalCalib(const VecXf &originalCalib, int originalW, int originalH);
 
 private:
 	// 创建就通过global赋值，可以用sharedptr
@@ -184,7 +183,6 @@ private:
 	void traceNewCoarse(FrameHessian* fh);
 	void activatePoints();
 	void activatePointsMT();
-	void activatePointsOldFirst();
 	void flagPointsForRemoval();
 	void makeNewTraces(FrameHessian* newFrame, float* gtDepth);
 	void initializeFromInitializer(FrameHessian* newFrame);
@@ -224,11 +222,9 @@ private:
 
 
 	void printLogLine();
-	void printEvalLine();
 	void printEigenValLine();
 	std::ofstream* calibLog;
 	std::ofstream* numsLog;
-	std::ofstream* errorsLog;
 	std::ofstream* eigenAllLog;
 	std::ofstream* eigenPLog;
 	std::ofstream* eigenALog;
