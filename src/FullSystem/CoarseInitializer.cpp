@@ -197,8 +197,6 @@ bool CoarseInitializer::trackFrame(FrameHessian* newFrameHessian, std::vector<IO
 
 			float eTotalNew = (resNew[0]+resNew[1]+regEnergy[1]);
 			float eTotalOld = (resOld[0]+resOld[1]+regEnergy[0]);
-
-
 			bool accept = eTotalOld > eTotalNew;
 
 			if(printDebug)
@@ -268,19 +266,13 @@ bool CoarseInitializer::trackFrame(FrameHessian* newFrameHessian, std::vector<IO
 	for(int i=0;i<pyrLevelsUsed-1;i++)
 		propagateUp(i);
 
-
-
-
 	frameID++;
 	if(!snapped) snappedAt=0; 
 
 	if(snapped && snappedAt==0)
 		snappedAt = frameID;  // 位移足够的帧数
 
-
-
     debugPlot(0,wraps);
-
 
 	// 位移足够大, 再优化5帧才行
 	return snapped && frameID > snappedAt+5;
@@ -317,15 +309,11 @@ void CoarseInitializer::debugPlot(int lvl, std::vector<IOWrap::Output3DWrapper*>
 	}
 	float fac = nid / sid;
 
-
-
 	for(int i=0;i<npts;i++)
 	{
 		Pnt* point = points[lvl]+i;
-
 		if(!point->isGood)
 			iRImg.setPixel9(point->u+0.5f,point->v+0.5f,Vec3b(0,0,0));
-
 		else
 			iRImg.setPixel9(point->u+0.5f,point->v+0.5f,makeRainbow3B(point->iR*fac));
 	}
@@ -524,18 +512,13 @@ Vec3f CoarseInitializer::calcResAndGS(
 					(float)dp0[i],(float)dp1[i],(float)dp2[i],(float)dp3[i],
 					(float)dp4[i],(float)dp5[i],(float)dp6[i],(float)dp7[i],
 					(float)r[i]);
-
-
 	}
 
 	E.finish();
 	acc9.finish();
 
 
-
-
 	//????? 这是在干吗???
-
 	// calculate alpha energy, and decide if we cap it.
 	Accumulator11 EAlpha;
 	EAlpha.initialize();
@@ -621,33 +604,8 @@ Vec3f CoarseInitializer::calcResAndGS(
 	b_out[1] += tlog[1]*alphaOpt*npts;
 	b_out[2] += tlog[2]*alphaOpt*npts;
 
-
-
-
 	// 能量值, ? , 使用的点的个数
 	return Vec3f(E.A, alphaEnergy ,E.num);
-}
-
-float CoarseInitializer::rescale()
-{
-	float factor = 20*thisToNext.translation().norm();
-	//	float factori = 1.0f/factor;
-	//	float factori2 = factori*factori;
-	//
-	//	for(int lvl=0;lvl<pyrLevelsUsed;lvl++)
-	//	{
-	//		int npts = numPoints[lvl];
-	//		Pnt* ptsl = points[lvl];
-	//		for(int i=0;i<npts;i++)
-	//		{
-	//			ptsl[i].iR *= factor;
-	//			ptsl[i].idepth_new *= factor;
-	//			ptsl[i].lastHessian *= factori2;
-	//		}
-	//	}
-	//	thisToNext.translation() *= factori;
-
-	return factor;
 }
 
 //* 计算旧的和新的逆深度与iR的差值, 返回旧的差, 新的差, 数目
@@ -811,9 +769,9 @@ void CoarseInitializer::makeGradients(Eigen::Vector3f** data)
 		for(int y=0;y<hl;y++)
 			for(int x=0;x<wl;x++)
 				dINew_l[x + y*wl][0] = 0.25f * (dINew_lm[2*x   + 2*y*wlm1][0] +
-													dINew_lm[2*x+1 + 2*y*wlm1][0] +
-													dINew_lm[2*x   + 2*y*wlm1+wlm1][0] +
-													dINew_lm[2*x+1 + 2*y*wlm1+wlm1][0]);
+												dINew_lm[2*x+1 + 2*y*wlm1][0] +
+												dINew_lm[2*x   + 2*y*wlm1+wlm1][0] +
+												dINew_lm[2*x+1 + 2*y*wlm1+wlm1][0]);
 		// 根据像素计算梯度
 		for(int idx=wl;idx < wl*(hl-1);idx++)
 		{
@@ -891,14 +849,10 @@ void CoarseInitializer::setFirst(	CalibHessian* HCalib, FrameHessian* newFrameHe
 				//? 这个阈值怎么确定的...
 				pl[nl].outlierTH = patternNum*setting_outlierTH;
 
-
-
 				nl++;
 				assert(nl <= npts);
 			}
 		}
-
-
 		numPoints[lvl]=nl; // 点的数目,  去掉了一些边界上的点
 	}
 	delete[] statusMap;
@@ -907,14 +861,12 @@ void CoarseInitializer::setFirst(	CalibHessian* HCalib, FrameHessian* newFrameHe
 	makeNN();
 
 	// 参数初始化
-
 	thisToNext=SE3();
 	snapped = false;
 	frameID = snappedAt = 0;
 
 	for(int i=0;i<pyrLevelsUsed;i++)
 		dGrads[i].setZero();
-
 }
 
 //@ 重置点的energy, idepth_new参数
@@ -951,7 +903,6 @@ void CoarseInitializer::resetPoints(int lvl)
 //* 求出状态增量后, 计算被边缘化掉的逆深度, 更新逆深度
 void CoarseInitializer::doStep(int lvl, float lambda, Vec8f inc)
 {
-
 	const float maxPixelStep = 0.25;
 	const float idMaxStep = 1e10;
 	Pnt* pts = points[lvl];
@@ -976,7 +927,7 @@ void CoarseInitializer::doStep(int lvl, float lambda, Vec8f inc)
 		// 更新得到新的逆深度
 		float newIdepth = pts[i].idepth + step;
 		if(newIdepth < 1e-3 ) newIdepth = 1e-3;
-		if(newIdepth > 50) newIdepth = 50;
+		else if(newIdepth > 50) newIdepth = 50;
 		pts[i].idepth_new = newIdepth;
 	}
 
@@ -1015,7 +966,6 @@ void CoarseInitializer::makeK(CalibHessian* HCalib)
 	// 求各层的K参数
 	for (int level = 1; level < pyrLevelsUsed; ++ level)
 	{
-		
 		w[level] = w[0] >> level;
 		h[level] = h[0] >> level;
 		fx[level] = fx[level-1] * 0.5;
@@ -1035,7 +985,6 @@ void CoarseInitializer::makeK(CalibHessian* HCalib)
 		cyi[level] = Ki[level](1,2);
 	}
 }
-
 
 
 //@ 生成每一层点的KDTree, 并用其找到邻近点集和父点 
@@ -1116,10 +1065,7 @@ void CoarseInitializer::makeNN()
 		}
 	}
 
-
-
 	// done.
-
 	for(int i=0;i<pyrLevelsUsed;i++)
 		delete indexes[i];
 }

@@ -30,13 +30,8 @@
 #include "Eigen/Core"
 
 
-
-
-
 namespace dso
 {
-
-
 class PhotometricUndistorter
 {
 public:

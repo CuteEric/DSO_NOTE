@@ -151,7 +151,6 @@ private:
 
 	void propagateUp(int srcLvl);
 	void propagateDown(int srcLvl);
-	float rescale();
 
 	void resetPoints(int lvl);
 	void doStep(int lvl, float lambda, Vec8f inc);

@@ -245,12 +245,6 @@ private:
 	long int statistics_numMargResBwd;
 	float statistics_lastFineTrackRMSE;
 
-
-
-
-
-
-
 	// =================== changed by tracker-thread. protected by trackMutex ============
 	boost::mutex trackMutex;		//!< tracking线程锁
 	std::vector<FrameShell*> allFrameHistory;		//!< 所有的历史帧

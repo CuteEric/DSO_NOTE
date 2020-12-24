@@ -485,12 +485,7 @@ int main( int argc, char** argv )
                 }
             }
 
-
-
             if(!skipFrame) fullSystem->addActiveFrame(img, i);
-
-
-
 
             delete img;
 
@@ -518,8 +513,8 @@ int main( int argc, char** argv )
 
             if(fullSystem->isLost)
             {
-                    printf("LOST!!\n");
-                    break;
+				printf("LOST!!\n");
+				break;
             }
 
         }

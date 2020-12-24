@@ -44,10 +44,6 @@
 
 namespace dso
 {
-
-
-
-
 //@ 对残差进行线性化
 //@ 参数: [true是applyRes, 并去掉不好的残差] [false不进行固定线性化]
 void FullSystem::linearizeAll_Reductor(bool fixLinearization, std::vector<PointFrameResidual*>* toRemove, int min, int max, Vec10* stats, int tid)
@@ -97,7 +93,6 @@ void FullSystem::applyRes_Reductor(bool copyJacobians, int min, int max, Vec10* 
 //@ 计算当前最新帧的能量阈值, 太玄学了
 void FullSystem::setNewFrameEnergyTH()
 {
-
 	// collect all residuals and make decision on TH.
 	allResVec.clear();
 	allResVec.reserve(activeResiduals.size()*2);
@@ -107,7 +102,6 @@ void FullSystem::setNewFrameEnergyTH()
 		if(r->state_NewEnergyWithOutlier >= 0 && r->target == newFrame) // 新的帧上残差
 		{
 			allResVec.push_back(r->state_NewEnergyWithOutlier);
-
 		}
 
 	if(allResVec.size()==0)
@@ -115,7 +109,6 @@ void FullSystem::setNewFrameEnergyTH()
 		newFrame->frameEnergyTH = 12*12*patternNum;
 		return;		// should never happen, but lets make sure.
 	}
-
 
 	int nthIdx = setting_frameEnergyTHN*allResVec.size(); // 以 setting_frameEnergyTHN 的能量为阈值
 
@@ -125,18 +118,12 @@ void FullSystem::setNewFrameEnergyTH()
 	std::nth_element(allResVec.begin(), allResVec.begin()+nthIdx, allResVec.end()); // 排序
 	float nthElement = sqrtf(allResVec[nthIdx]); // 70% 的值都小于这个值
 
-
-
-
-
 	//? 这阈值为啥这么设置
 	//* 先扩大, 在乘上一个鲁棒函数? , 再算平方得到阈值
     newFrame->frameEnergyTH = nthElement*setting_frameEnergyTHFacMedian;
 	newFrame->frameEnergyTH = 26.0f*setting_frameEnergyTHConstWeight + newFrame->frameEnergyTH*(1-setting_frameEnergyTHConstWeight);
 	newFrame->frameEnergyTH = newFrame->frameEnergyTH*newFrame->frameEnergyTH;
 	newFrame->frameEnergyTH *= setting_overallEnergyTHWeight*setting_overallEnergyTHWeight;
-
-
 
 	//
 	//	int good=0,bad=0;
@@ -145,14 +132,13 @@ void FullSystem::setNewFrameEnergyTH()
 	//			meanElement, nthElement, sqrtf(newFrame->frameEnergyTH),
 	//			good, bad);
 }
+
 //@ 对残差进行线性化, 并去掉不在图像内, 并且残差大的
 Vec3 FullSystem::linearizeAll(bool fixLinearization)
 {
 	double lastEnergyP = 0;
 	double lastEnergyR = 0;
 	double num = 0;
-
-
 	std::vector<PointFrameResidual*> toRemove[NUM_THREADS];
 	for(int i=0;i<NUM_THREADS;i++) toRemove[i].clear();
 
@@ -169,9 +155,7 @@ Vec3 FullSystem::linearizeAll(bool fixLinearization)
 		lastEnergyP = stats[0];
 	}
 
-
 	setNewFrameEnergyTH();
-
 
 	if(fixLinearization)
 	{
@@ -214,9 +198,6 @@ Vec3 FullSystem::linearizeAll(bool fixLinearization)
 
 	return Vec3(lastEnergyP, lastEnergyR, num); // 后面两个变量都没用
 }
-
-
-
 
 // applies step to linearization point.
 //@ 更新各个状态, 并且判断是否可以停止优化
@@ -420,15 +401,9 @@ void FullSystem::printOptRes(const Vec3 &res, double resL, double resM, double r
 //@ 对当前的关键帧进行GN优化
 float FullSystem::optimize(int mnumOptIts)
 {
-
 	if(frameHessians.size() < 2) return 0;
 	if(frameHessians.size() < 3) mnumOptIts = 20; // 迭代次数
 	if(frameHessians.size() < 4) mnumOptIts = 15;
-
-
-
-
-
 
 	// get statistics and active residuals.
 //[ ***step 1*** ] 找出未线性化(边缘化)的残差, 加入activeResiduals
@@ -503,17 +478,11 @@ float FullSystem::optimize(int mnumOptIts)
 
 			stepsize = sqrtf(sqrtf(newStepsize*stepsize*stepsize*stepsize));
 			if(stepsize > 2) stepsize=2;
-			if(stepsize <0.25) stepsize=0.25;
+			else if(stepsize <0.25) stepsize=0.25;
 		}
 		//[ ***step 3.3*** ] 更新状态
 		//* 更新变量, 判断是否停止
 		bool canbreak = doStepFromBackup(stepsize,stepsize,stepsize,stepsize,stepsize);
-
-
-
-
-
-
 
 		// eval new energy!
 		//* 更新后重新计算
@@ -521,18 +490,15 @@ float FullSystem::optimize(int mnumOptIts)
 		double newEnergyL = calcLEnergy();
 		double newEnergyM = calcMEnergy();
 
-
-
-
         if(!setting_debugout_runquiet)
         {
             printf("%s %d (L %.2f, dir %.2f, ss %.1f): \t",
-				(newEnergy[0] +  newEnergy[1] +  newEnergyL + newEnergyM <
-						lastEnergy[0] + lastEnergy[1] + lastEnergyL + lastEnergyM) ? "ACCEPT" : "REJECT",
-				iteration,
-				log10(lambda),
-				incDirChange,
-				stepsize);
+					(newEnergy[0] +  newEnergy[1] +  newEnergyL + newEnergyM <
+					lastEnergy[0] + lastEnergy[1] + lastEnergyL + lastEnergyM) ? "ACCEPT" : "REJECT",
+					iteration,
+					log10(lambda),
+					incDirChange,
+					stepsize);
             printOptRes(newEnergy, newEnergyL, newEnergyM , 0, 0, frameHessians.back()->aff_g2l().a, frameHessians.back()->aff_g2l().b);
         }
 //[ ***step 4*** ] 判断是否接受这次计算
@@ -576,12 +542,8 @@ float FullSystem::optimize(int mnumOptIts)
 	ef->setAdjointsF(&Hcalib); // 重新计算adj
 	setPrecalcValues(); // 更新增量
 
-
-
 	// 更新之后的能量
 	lastEnergy = linearizeAll(true);
-
-
 
 	//* 能量函数太大, 投影的不好, 跟丢
 	if(!std::isfinite((double)lastEnergy[0]) || !std::isfinite((double)lastEnergy[1]) || !std::isfinite((double)lastEnergy[2]))
@@ -612,17 +574,12 @@ float FullSystem::optimize(int mnumOptIts)
 		}
 	}
 
-
-
-
 	debugPlotTracking();
 
 	//* 返回平均误差rmse
 	return sqrtf((float)(lastEnergy[0] / (patternNum*ef->resInA)));
 
 }
-
-
 
 
 //@ 求解系统
@@ -672,8 +629,6 @@ void FullSystem::removeOutliers()
 	}
 	ef->dropPointsF();
 }
-
-
 
 //@ 得到各个状态的零空间
 std::vector<VecX> FullSystem::getNullspaces(

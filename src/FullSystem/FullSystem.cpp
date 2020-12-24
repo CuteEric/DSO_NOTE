@@ -499,11 +499,11 @@ void FullSystem::traceNewCoarse(FrameHessian* fh)
 		{
 			ph->traceOn(fh, KRKi, Kt, aff, &Hcalib, false );
 			if(ph->lastTraceStatus==ImmaturePointStatus::IPS_GOOD) trace_good++;
-			if(ph->lastTraceStatus==ImmaturePointStatus::IPS_BADCONDITION) trace_badcondition++;
-			if(ph->lastTraceStatus==ImmaturePointStatus::IPS_OOB) trace_oob++;
-			if(ph->lastTraceStatus==ImmaturePointStatus::IPS_OUTLIER) trace_out++;
-			if(ph->lastTraceStatus==ImmaturePointStatus::IPS_SKIPPED) trace_skip++;
-			if(ph->lastTraceStatus==ImmaturePointStatus::IPS_UNINITIALIZED) trace_uninitialized++;
+			else if(ph->lastTraceStatus==ImmaturePointStatus::IPS_BADCONDITION) trace_badcondition++;
+			else if(ph->lastTraceStatus==ImmaturePointStatus::IPS_OOB) trace_oob++;
+			else if(ph->lastTraceStatus==ImmaturePointStatus::IPS_OUTLIER) trace_out++;
+			else if(ph->lastTraceStatus==ImmaturePointStatus::IPS_SKIPPED) trace_skip++;
+			else if(ph->lastTraceStatus==ImmaturePointStatus::IPS_UNINITIALIZED) trace_uninitialized++;
 			trace_total++;
 		}
 	}
@@ -784,8 +784,6 @@ void FullSystem::flagPointsForRemoval()
 						ph->efPoint->stateFlag = EFPointStatus::PS_DROP;
 						host->pointHessiansOut.push_back(ph);
 					}
-
-
 				}
 				//* 不是内点直接扔掉
 				else
@@ -846,8 +844,6 @@ void FullSystem::addActiveFrame( ImageAndExposure* image, int id )
 	// =========================== make Images / derivatives etc. =========================
 	fh->ab_exposure = image->exposure_time;
     fh->makeImages(image->image, &Hcalib);
-
-
 
 	//[ ***step 4*** ] 进行初始化
 	if(!initialized)
@@ -914,13 +910,8 @@ void FullSystem::addActiveFrame( ImageAndExposure* image, int id )
 
 		}
 
-
-
-
         for(IOWrap::Output3DWrapper* ow : outputWrapper)
             ow->publishCamPose(fh->shell, &Hcalib);
-
-
 
 //[ ***step 7*** ] 把该帧发布出去
 		lock.unlock();
@@ -948,8 +939,6 @@ void FullSystem::deliverTrackedFrame(FrameHessian* fh, bool needKF)
 			lastRefStopID = coarseTracker->refFrameID;
 		}
 		else handleKey( IOWrap::waitKey(1) );
-
-
 
 		if(needKF) makeKeyFrame(fh);
 		else makeNonKeyFrame(fh);
@@ -1137,10 +1126,6 @@ void FullSystem::makeKeyFrame( FrameHessian* fh)
 	fh->frameEnergyTH = frameHessians.back()->frameEnergyTH;  // 这两个不是一个值么???
 	float rmse = optimize(setting_maxOptIterations);
 
-
-
-
-
 	// =========================== Figure Out if INITIALIZATION FAILED =========================
 	//* 所有的关键帧数小于4，认为还是初始化，此时残差太大认为初始化失败
 	if(allKeyFramesHistory.size() <= 4)
@@ -1150,49 +1135,35 @@ void FullSystem::makeKeyFrame( FrameHessian* fh)
 			printf("I THINK INITIALIZATINO FAILED! Resetting.\n");
 			initFailed=true;
 		}
-		if(allKeyFramesHistory.size()==3 && rmse > 13*benchmark_initializerSlackFactor)
+		else if(allKeyFramesHistory.size()==3 && rmse > 13*benchmark_initializerSlackFactor)
 		{
 			printf("I THINK INITIALIZATINO FAILED! Resetting.\n");
 			initFailed=true;
 		}
-		if(allKeyFramesHistory.size()==4 && rmse > 9*benchmark_initializerSlackFactor)
+		else if(allKeyFramesHistory.size()==4 && rmse > 9*benchmark_initializerSlackFactor)
 		{
 			printf("I THINK INITIALIZATINO FAILED! Resetting.\n");
 			initFailed=true;
 		}
 	}
 
-
-
     if(isLost) return;  // 优化后的能量函数太大, 认为是跟丢了
-
-
 
 //[ ***step 8*** ] 去除外点, 把最新帧设置为参考帧
 //TODO 是否可以更加严格一些
 	// =========================== REMOVE OUTLIER =========================
 	removeOutliers();
 
-
-
-
 	{
 		boost::unique_lock<boost::mutex> crlock(coarseTrackerSwapMutex);
 		coarseTracker_forNewKF->makeK(&Hcalib);  // 更新了内参, 因此重新make
 		coarseTracker_forNewKF->setCoarseTrackingRef(frameHessians);
 
-
-
         coarseTracker_forNewKF->debugPlotIDepthMap(&minIdJetVisTracker, &maxIdJetVisTracker, outputWrapper);
         coarseTracker_forNewKF->debugPlotIDepthMapFloat(outputWrapper);
 	}
 
-
 	debugPlot("post Optimize");
-
-
-
-
 
 //[ ***step 9*** ] 标记删除和边缘化的点, 并删除&边缘化
 	// =========================== (Activate-)Marginalize Points =========================
@@ -1212,17 +1183,11 @@ void FullSystem::makeKeyFrame( FrameHessian* fh)
 	// =========================== add new Immature points & new residuals =========================
 	makeNewTraces(fh, 0);
 
-
-
-
-
     for(IOWrap::Output3DWrapper* ow : outputWrapper)
     {
         ow->publishGraph(ef->connectivityMap);
         ow->publishKeyframes(frameHessians, false, &Hcalib);
     }
-
-
 
 	// =========================== Marginalize Frames =========================
 //[ ***step 11*** ] 边缘化掉关键帧
@@ -1231,11 +1196,8 @@ void FullSystem::makeKeyFrame( FrameHessian* fh)
 		if(frameHessians[i]->flaggedForMarginalization)
 			{marginalizeFrame(frameHessians[i]); i=0;}
 
-
-
 	printLogLine();
     //printEigenValLine();
-
 }
 
 //@ 从初始化中提取出信息, 用于跟踪.
@@ -1305,7 +1267,6 @@ void FullSystem::initializeFromInitializer(FrameHessian* newFrame)
 	SE3 firstToNew = coarseInitializer->thisToNext;
 	firstToNew.translation() /= rescaleFactor;
 
-
 	// really no lock required, as we are initializing.
 	{
 		boost::unique_lock<boost::mutex> crlock(shellPoseMutex);
@@ -1337,18 +1298,17 @@ void FullSystem::makeNewTraces(FrameHessian* newFrame, float* gtDepth)
 	newFrame->pointHessiansMarginalized.reserve(numPointsTotal*1.2f);
 	newFrame->pointHessiansOut.reserve(numPointsTotal*1.2f);
 
-
 	for(int y=patternPadding+1;y<hG[0]-patternPadding-2;y++)
-	for(int x=patternPadding+1;x<wG[0]-patternPadding-2;x++)
-	{
-		int i = x+y*wG[0];
-		if(selectionMap[i]==0) continue;
+		for(int x=patternPadding+1;x<wG[0]-patternPadding-2;x++)
+		{
+			int i = x+y*wG[0];
+			if(selectionMap[i]==0) continue;
 
-		ImmaturePoint* impt = new ImmaturePoint(x,y,newFrame, selectionMap[i], &Hcalib);
-		if(!std::isfinite(impt->energyTH)) delete impt;  // 投影得到的不是有穷数
-		else newFrame->immaturePoints.push_back(impt);
+			ImmaturePoint* impt = new ImmaturePoint(x,y,newFrame, selectionMap[i], &Hcalib);
+			if(!std::isfinite(impt->energyTH)) delete impt;  // 投影得到的不是有穷数
+			else newFrame->immaturePoints.push_back(impt);
 
-	}
+		}
 	//printf("MADE %d IMMATURE POINTS!\n", (int)newFrame->immaturePoints.size());
 
 }
@@ -1391,23 +1351,23 @@ void FullSystem::printLogLine()
 
 	if(numsLog != 0)
 	{
-		(*numsLog) << allKeyFramesHistory.back()->id << " "  <<
-				statistics_lastFineTrackRMSE << " "  <<
-				(int)statistics_numCreatedPoints << " "  <<
-				(int)statistics_numActivatedPoints << " "  <<
-				(int)statistics_numDroppedPoints << " "  <<
-				(int)statistics_lastNumOptIts << " "  <<
-				ef->resInA << " "  <<
-				ef->resInL << " "  <<
-				ef->resInM << " "  <<
-				statistics_numMargResFwd << " "  <<
-				statistics_numMargResBwd << " "  <<
-				statistics_numForceDroppedResFwd << " "  <<
-				statistics_numForceDroppedResBwd << " "  <<
-				frameHessians.back()->aff_g2l().a << " "  <<
-				frameHessians.back()->aff_g2l().b << " "  <<
-				frameHessians.back()->shell->id - frameHessians.front()->shell->id << " "  <<
-				(int)frameHessians.size() << " "  << "\n";
+		(*numsLog) << 	allKeyFramesHistory.back()->id << " "  <<
+						statistics_lastFineTrackRMSE << " "  <<
+						(int)statistics_numCreatedPoints << " "  <<
+						(int)statistics_numActivatedPoints << " "  <<
+						(int)statistics_numDroppedPoints << " "  <<
+						(int)statistics_lastNumOptIts << " "  <<
+						ef->resInA << " "  <<
+						ef->resInL << " "  <<
+						ef->resInM << " "  <<
+						statistics_numMargResFwd << " "  <<
+						statistics_numMargResBwd << " "  <<
+						statistics_numForceDroppedResFwd << " "  <<
+						statistics_numForceDroppedResBwd << " "  <<
+						frameHessians.back()->aff_g2l().a << " "  <<
+						frameHessians.back()->aff_g2l().b << " "  <<
+						frameHessians.back()->shell->id - frameHessians.front()->shell->id << " "  <<
+						(int)frameHessians.size() << " "  << "\n";
 		numsLog->flush();
 	}
 
@@ -1502,7 +1462,6 @@ void FullSystem::printFrameLifetimes()
 {
 	if(!setting_logStuff) return;
 
-
 	boost::unique_lock<boost::mutex> lock(trackMutex);
 
 	std::ofstream* lg = new std::ofstream();
@@ -1516,19 +1475,10 @@ void FullSystem::printFrameLifetimes()
 			<< " " << s->statistics_goodResOnThis
 			<< " " << s->statistics_outlierResOnThis
 			<< " " << s->movedByOpt;
-
-
-
 		(*lg) << "\n";
 	}
-
-
-
-
-
 	lg->close();
 	delete lg;
-
 }
 
 }

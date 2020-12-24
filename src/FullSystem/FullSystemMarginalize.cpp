@@ -193,8 +193,6 @@ void FullSystem::marginalizeFrame(FrameHessian* frame)
 		}
 	}
 
-
-
     {
         std::vector<FrameHessian*> v;
         v.push_back(frame);
@@ -210,14 +208,7 @@ void FullSystem::marginalizeFrame(FrameHessian* frame)
 	for(unsigned int i=0;i<frameHessians.size();i++)
 		frameHessians[i]->idx = i;
 
-
-
-
 	setPrecalcValues();
 	ef->setAdjointsF(&Hcalib);
 }
-
-
-
-
 }
